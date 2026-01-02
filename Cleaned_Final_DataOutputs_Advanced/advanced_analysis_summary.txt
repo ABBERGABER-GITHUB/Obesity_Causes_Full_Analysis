@@ -1,0 +1,5 @@
+Data rows: 192 Columns: 22
+VIF computed.
+Stepwise model computed.
+Lasso λ.min: 0.0130343663200378
+Ridge λ.min: 11.8764291403845

@@ -1,0 +1,18 @@
+  Tukey multiple comparisons of means
+    95% family-wise confidence level
+
+Fit: aov(formula = as.formula(paste(target, "~ Income_Level")), data = anova_df)
+
+$Income_Level
+                                                 diff         lwr          upr     p adj
+Low income-High income                  -0.0685507547 -0.19419139 0.0570898827 0.5618839
+Lower-middle income-High income         -0.0294053306 -0.10095702 0.0421463587 0.7893725
+Unknown-High income                      0.0116884500 -0.06307919 0.0864560886 0.9927873
+Upper-middle income-High income         -0.0680702776 -0.13657580 0.0004352494 0.0523730
+Lower-middle income-Low income           0.0391454241 -0.09148949 0.1697803383 0.9224956
+Unknown-Low income                       0.0802392047 -0.05218450 0.2126629048 0.4556108
+Upper-middle income-Low income           0.0004804771 -0.12851117 0.1294721195 1.0000000
+Unknown-Lower-middle income              0.0410937806 -0.04179235 0.1239799124 0.6503566
+Upper-middle income-Lower-middle income -0.0386649470 -0.11594960 0.0386197106 0.6424530
+Upper-middle income-Unknown             -0.0797587276 -0.16002998 0.0005125240 0.0523849
+

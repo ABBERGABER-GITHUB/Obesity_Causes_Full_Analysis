@@ -1,0 +1,22 @@
+### Stepwise (AIC) selected model:/n
+Call:
+lm(formula = Avg_Adult_Obesity_BMI30 ~ Income_Level, data = step_df)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.20758 -0.08770 -0.00592  0.05012  0.50704 
+
+Coefficients:
+                                Estimate Std. Error t value            Pr(>|t|)    
+(Intercept)                      0.20571    0.01591  12.933 <0.0000000000000002 ***
+Income_LevelLow income          -0.06855    0.04561  -1.503              0.1345    
+Income_LevelLower-middle income -0.02941    0.02598  -1.132              0.2591    
+Income_LevelUnknown              0.01169    0.02714   0.431              0.6672    
+Income_LevelUpper-middle income -0.06807    0.02487  -2.737              0.0068 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1282 on 187 degrees of freedom
+Multiple R-squared:  0.05731,	Adjusted R-squared:  0.03715 
+F-statistic: 2.842 on 4 and 187 DF,  p-value: 0.02551
+

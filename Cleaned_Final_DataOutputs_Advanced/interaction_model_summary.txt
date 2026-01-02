@@ -1,0 +1,25 @@
+### Interaction model: sugar * fastfood + Income_Level/n
+Call:
+lm(formula = formula_inter, data = inter_df)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.20730 -0.08666 -0.00374  0.05212  0.50910 
+
+Coefficients:
+                                                               Estimate  Std. Error t value             Pr(>|t|)    
+(Intercept)                                                  0.20416555  0.01912762  10.674 < 0.0000000000000002 ***
+Avg_SugarCons_PerCapita_2019_2022                           -0.00007528  0.00032739  -0.230              0.81839    
+Annual_FastFood_Sales_USD                                   -0.00005119  0.00064502  -0.079              0.93683    
+Income_LevelLow income                                      -0.06514623  0.04591719  -1.419              0.15766    
+Income_LevelLower-middle income                             -0.02525735  0.02636994  -0.958              0.33942    
+Income_LevelUnknown                                          0.01565620  0.02747832   0.570              0.56953    
+Income_LevelUpper-middle income                             -0.06699023  0.02518531  -2.660              0.00851 ** 
+Avg_SugarCons_PerCapita_2019_2022:Annual_FastFood_Sales_USD  0.00001024  0.00001483   0.690              0.49088    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1285 on 184 degrees of freedom
+Multiple R-squared:  0.06818,	Adjusted R-squared:  0.03273 
+F-statistic: 1.923 on 7 and 184 DF,  p-value: 0.06814
+

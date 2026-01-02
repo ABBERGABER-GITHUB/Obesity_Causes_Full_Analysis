@@ -1,0 +1,10 @@
+Important Factors Extraction - Summary
+Data rows used for analyses: 192
+Files created in folder: Important_Factors (correlation, lm coeffs, RF importance, Lasso coeffs if available).
+
+How to read results:
+- correlation_with_target.csv: Pearson correlation (sign indicates direction). Check top abs() values.
+- standardized_lm_coefficients.csv: standardized betas; magnitude shows relative effect size (controlling other predictors).
+- rf_variable_importance_IncMSE.csv: Random forest importance (%IncMSE) — higher means more impact on prediction.
+- lasso_nonzero_coefficients.csv: variables Lasso kept (non-zero) — good for feature selection.
+- combined_importance_ranks.csv: aggregated rank across methods (lower = more consistently important).

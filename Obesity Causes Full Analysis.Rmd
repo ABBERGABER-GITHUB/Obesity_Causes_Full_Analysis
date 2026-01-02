@@ -1,0 +1,608 @@
+---
+title: "Obesity Causes Full Analysis"
+author: "Abeer Gaber"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+  pdf_document:
+    toc: true
+    df_print: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=5)
+library(tidyverse)
+library(ggplot2)
+library(corrplot)
+library(psych)
+library(GGally)
+library(caret)
+library(randomForest)
+library(patchwork)
+library(htmltools)
+
+tags$head(
+tags$style(HTML("
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&display=swap');
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+}
+h1, h2, h3, h4 {
+  font-family: 'Merriweather', serif;
+  font-weight: 700;
+}
+
+"))
+)
+```
+
+# 1. Introduction
+
+This report provides a deep analysis of global obesity patterns across more than 190 countries using data from **Our World in Data**.
+
+The analysis focuses on both **adult and child obesity**, examining dietary intake, physical activity, income level, age structure, and gender differences.
+
+**Research Objective:**
+This study aims to evaluate whether commonly cited dietary and lifestyle factors—such as sugar consumption, fast food sales, and physical activity can meaningfully explain cross country differences in obesity prevalence.
+
+** Conclusion:**
+
+Results indicate that **no single factor** can account for global obesity variation. Instead, obesity reflects **complex, long-term structural, social, and environmental influences** beyond simple consumption measures.
+<br><br><br>
+
+```{R}
+# 1. Import Data
+data <- read.csv("D:/Data Analysis/Finished Projects/Obesity_Causes_Analysis/Cleaned_Final_Data.csv")
+#head(data)
+#str(data)
+#summary(data)
+
+# 2. Check Missing Values
+#colSums(is.na(data))
+```
+
+## 2. Data Overview
+
+- Data covers over **190 countries**.
+- Source: **Our World in Data**.
+- Variables include adult and child obesity rates, sugar consumption, fast food sales, animal-based food intake, fruit and vegetable consumption, physical activity, income level, age, gender distribution, and health indicators.
+<br><br><br>
+
+# 3. Numeric Variables Correlation
+```{r corrplot, fig.width=10, fig.height=8, dpi=300}
+numeric_data <- data %>% select_if(is.numeric)
+corr_matrix <- cor(numeric_data, use = "pairwise.complete.obs")
+corrplot(
+  corr_matrix,
+  method = "color",
+  type = "upper",
+  tl.cex = 0.5,
+  tl.col = "black",
+  cl.cex = 1,
+  addCoef.col = "black",
+  number.cex = 0.4,
+  col = colorRampPalette(c("#4575b4", "#ffffbf", "#d73027"))(1000),
+  mar = c(1,1,3.5,1),
+  bg = "white",
+  diag = FALSE
+)
+# Add title at the bottom instead of the top
+mtext("Food Types vs Obesity Correlation",
+      side = 1,       # 1 = bottom
+      line =4.1,       # distance from plot
+      cex = 1,        # text size
+      font = 2)       # optional: bold
+```
+
+### Interpretation:
+
+**Obesity indicators** (adult, child, male, and female obesity rates) show **strong positive correlations**, indicating that obesity prevalence is consistent across age and gender groups.
+
+**Fast food sales** and **diabetes prevalence** exhibit **moderate positive correlations** with obesity, suggesting a notable association between unhealthy dietary patterns and obesity-related diseases.
+
+**Animal protein intake** shows a **mild to moderate** relationship with obesity, while **overall animal-based food consumption** remains **weakly correlated**.
+
+**Fruit and vegetable consumption** displays **weak or negligible correlations**,implying that these factors alone do not explain cross-country obesity differences.
+
+**Physical activity** has a **weak negative correlation** with obesity, indicating a limited but protective effect.
+
+**Conclusion:**
+
+The matrix highlights that structural and lifestyle-related factors are more **strongly associated with obesity than individual food categories**.
+<br><br><br>
+
+# 4. Adult Obesity Distribution
+```{r}
+
+ggplot(data, aes(x=Avg_Adult_Obesity_BMI30)) +
+geom_histogram(fill="salmon", bins=30, color="black", alpha=0.7) +
+theme_minimal() +
+labs(title="Distribution of Adult Obesity (BMI ≥30)", x="BMI ≥30 (%)", y="Count")
+```
+
+### Interpretation:
+
+Adult obesity rates follow a **left-skewed distribution**, where a few countries exhibit exceptionally high values, indicating that **extreme obesity prevalence is not widespread** but linked to specific national-level factors.
+<br><br><br>
+
+# 5. Child Obesity Distribution
+```{r}
+
+ggplot(data, aes(x=Avg_Child_Obesity_MBI2SD)) +
+geom_histogram(fill="lightblue", bins=30, color="black", alpha=0.7) +
+theme_minimal() +
+labs(title="Distribution of Child Obesity (BMI ≥2SD)", x="BMI ≥2SD (%)", y="Count")
+```
+
+### Interpretation:
+
+Child obesity follows a **left-skewed distribution**, and although it aligns with adult obesity trends in many countries, the observed variation indicates the influence of age-specific lifestyle and environmental factors.
+<br><br><br>
+
+# 6. Scatter: Sugar Consumption vs Adult Obesity
+```{r ggplot_large, fig.width=12, fig.height=10, dpi=300}
+
+ggplot(data, aes(x=Avg_SugarCons_PerCapita_2019_2022, y=Avg_Adult_Obesity_BMI30, label=Country)) +
+geom_point(color="darkred", alpha=0.6) +
+geom_text(vjust=-0.3, size=2) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Sugar Consumption vs Adult Obesity", x="Sugar per Capita", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+Despite a nearly **flat trend line**, the clustering of countries at low sugar consumption levels with highly variable obesity rates suggests that **sugar intake alone** is a **weak predictor** of adult obesity.
+<br><br><br>
+
+# 7. Scatter: Fast Food Sales vs Adult Obesity
+```{r}
+
+ggplot(data, aes(x=Annual_FastFood_Sales_USD, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="steelblue", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Fast Food Sales vs Adult Obesity", x="Annual Fast Food Sales (USD)", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+This plot reflects the association between fast food sales and adult obesity rates.Data are **right-skewed**, with most observations at low sales levels and few high-sales outliers. A **slight positive trend** is visible, but **fast food consumption alone** does not fully explain obesity variation.
+  
+<br><br><br>
+
+# 8. Scatter: Physical Activity vs Adult Obesity
+```{r}
+
+ggplot(data, aes(x=Avg_Physical_Act2000_2030, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="darkgreen", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Physical Activity vs Adult Obesity", x="Avg Physical Activity 2000-2030", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+Most countries cluster at **moderate physical activity and obesity levels**, with some showing very low obesity rates. **Higher activity** tends to relate to **lower obesity**, but other factors also play a significant role.
+<br><br><br>
+
+# 9. Scatter: Animal Protein Intake vs Adult Obesity
+```{r}
+
+ggplot(data, aes(x=Animal_Protein_Intake, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="orange", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Animal Protein Intake vs Adult Obesity", x="Animal Protein Intake", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+Most countries are evenly distributed around a nearly **straight trend line**, with only a few at the extreme right. This suggests that **protein intake alone** does not strongly determine obesity.
+<br><br><br>
+
+
+# 10. Fruit & Vegetable Consumption vs Adult Obesity
+```{r}
+
+ggplot(data, aes(x=Avg_Fruit + Avg_Vege_cons, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="purple", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Fruit & Vegetable Intake vs Adult Obesity", x="Avg Fruit + Vegetable Intake", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+Most countries are evenly distributed around a nearly **straight trend line**, with only a few at the extreme right. This suggests that **fruit and vegetable intake alone** does not strongly determine obesity.
+<br><br><br>
+
+# 11. Boxplot: Obesity by Income Level
+```{r}
+
+ggplot(data, aes(x=Income_Level, y=Avg_Adult_Obesity_BMI30, fill=Income_Level)) +
+geom_boxplot(alpha=0.8) +
+theme_minimal() +
+labs(title="Adult Obesity by Income Level", x="Income Level", y="Adult Obesity (BMI ≥30)") +
+theme(legend.position="none")
+```
+
+### Interpretation:
+
+The **heavy overlap across income groups** shows that income level by itself does not explain obesity differences between countries.
+
+Some **high-income countries appear as extreme cases**, driven by food environments and lifestyles that promote **over consumption rather than by income alone**.
+
+At the same time, **low-income countries can show high obesity** because diets are often calorie-rich but nutritionally poor, reflecting access constraints rather than abundance.
+
+Overall, the figure illustrates that **obesity is shaped less by income and more by how food is produced, priced, and consumed within each society**.
+<br><br><br>
+
+# 12. Regression: Adult Obesity
+```{r}
+
+model_adult <- lm(Avg_Adult_Obesity_BMI30 ~ Avg_SugarCons_PerCapita_2019_2022 + Annual_FastFood_Sales_USD +
+Animal_Protein_Intake + Avg_Fruit + Avg_Vege_cons + Avg_Physical_Act2000_2030 + Income_Level + Avg_Age, data=data)
+summary(model_adult)
+```
+
+### Interpretation:
+
+The model has **very low explanatory power** (Adjusted R² = 0.019) and is **not statistically significant overall** (F(11,180) = 1.33, p = 0.21), indicating that the covariates explain little of the variation in obesity rates.
+
+Only **upper-middle income** is **statistically significant** (β = −0.062, p = 0.016), while all dietary, activity, and demographic variables have p-values > 0.20 and near-zero coefficients.
+
+This suggests that cross-country obesity differences are **driven more by structural and contextual factors than by average consumption or behavior measures**.
+
+**Conclusion:**The regression highlights both the **weak predictive power of macro-level** indicators and the **importance of unobserved social, economic, and environmental mechanisms**.
+<br><br><br>
+
+# 13. Regression: Child Obesity
+```{r}
+
+model_child <- lm(Avg_Child_Obesity_MBI2SD ~ Avg_SugarCons_PerCapita_2019_2022 + Annual_FastFood_Sales_USD +
+Animal_Protein_Intake + Avg_Fruit + Avg_Vege_cons + Avg_Physical_Act2000_2030 + Income_Level + Avg_Age, data=data)
+summary(model_child)
+```
+
+### Interpretation:
+
+The model explains virtually **none of the variation in child obesity** (Adjusted R² = −0.011) and is **not statistically significant** overall (F(11,180) = 0.81, p = 0.63).
+
+Only **upper-middle income** is **statistically significant** (β = −0.021, p = 0.039), while all other predictors have p-values above 0.20 and very small coefficients.
+
+This indicates that **average dietary intake, physical activity, and demographics at the country level** have **limited power** to explain cross-country differences in child obesity.
+
+**Conclusion:** Child obesity appears to be driven primarily by factors not captured in this model, such as **household behavior, urban environment, health systems, and early-life conditions**.
+<br><br><br>
+
+
+# 14. Death Rate Change vs Adult Obesity
+```{r}
+
+ggplot(data, aes(x=Death_RateRelative_Change, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="darkblue", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Death Rate Change vs Adult Obesity", x="Relative Change in Death Rate", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+The **near-flat regression line** and wide dispersion indicate **no meaningful linear relationship** between changes in **mortality and adult obesity** across countries.
+
+This suggests that **short-term changes in death rates** are driven by **acute factors** (healthcare shocks, epidemics, conflicts, policy changes) rather than by chronic conditions like obesity.
+
+The **few high-obesity or high-mortality observations** behave as **context-specific outliers**, not as part of a general pattern.
+
+**Conclusion:** Adult obesity is a **long-run structural risk factor**, while changes in **death rates reflect short-run dynamics** making a direct cross-sectional relationship between them inherently weak.
+<br><br><br>
+
+
+# 15. Diabetes Prevalence vs Obesity
+```{r}
+
+ggplot(data, aes(x=Avg_Diabetes_18, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="brown", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Diabetes Prevalence vs Adult Obesity", x="Diabetes Prevalence (%)", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+The **upward slope of the regression line** shows a **positive association:** higher obesity corresponds to higher diabetes prevalence.
+
+Most countries cluster at **low obesity and low diabetes**, indicating limited variation in diabetes for low-obesity populations.
+
+The **steep rise on the right shows that in high-obesity countries, small increases in obesity lead to large increases in diabetes prevalence**, highlighting obesity’s amplified effect.
+
+**Conclusion:** Obesity is a key driver of diabetes, with its impact becoming extreme in high-obesity populations
+<br><br><br>
+
+# 16. Random Forest Importance
+```{r}
+set.seed(123)
+rf_model <- randomForest(Avg_Adult_Obesity_BMI30 ~ ., data=data[, -c(1,2)], importance=TRUE)
+
+# ضبط المسافات والحجم
+par(mar=c(6,12,4,2))  # زيادة المسافة على اليسار ليظهر النص كامل
+par(las=1)             # يجعل النص أفقي
+par(cex.axis=0.9)      # تصغير حجم نص المحور
+par(cex.lab=1)         # حجم عنوان الرسم
+par(cex.main=1.2)      # حجم عنوان الرسم الرئيسي
+
+# رسم المتغيرات المهمة مع مسافة أكبر بين كل متغير
+varImpPlot(rf_model,
+           sort=TRUE,
+           n.var=min(20, nrow(importance(rf_model))), # أهم 20 متغير فقط
+           main="Variable Importance - Random Forest",
+           col="steelblue",
+           cex=0.9)  # تصغير أسماء المتغيرات لعدم التكدس
+```
+
+### Interpretation:
+
+This plot shows which variables the model relied on most to predict obesity.
+
+**%IncMSE (left):** Shows how much including a variable improves prediction accuracy.
+
+**IncNodePurity (right):** Shows how well a variable helps the model separate the data into clear groups.
+
+**Top predictors** include Avg_Child_Obesity_MBI2SD, Avg_Diabetes_18, and Avg_Males_Obesity_BMI_30kg_m2.
+
+Variables like **Income_Level or Physical Activity** appear **lower**, likely due to overlap with other variables.
+
+**Conclusion:** This reflects the model’s perspective on importance, not necessarily the real-world effect of each variable.
+<br><br><br>
+
+
+# 17. Sugar & Fast Food vs Child Obesity
+```{r}
+
+ggplot(data, aes(x=Avg_SugarCons_PerCapita_2019_2022 + Annual_FastFood_Sales_USD, y=Avg_Child_Obesity_MBI2SD)) +
+geom_point(color="purple", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Sugar & Fast Food vs Child Obesity", x="Sugar + Fast Food Sales", y="Child Obesity (BMI ≥2SD)")
+```
+
+### Interpretation:
+
+Most countries have **low sugar and fast food consumption**, and the **trend line is nearly flat**.
+
+This shows a **very weak link between sugar/fast food intake and child obesity**.
+
+**Conclusion:** Other factors are likely more important in explaining child obesity.
+<br><br><br>
+
+# 18. Age vs Obesity
+```{r}
+
+ggplot(data, aes(x=Avg_Age, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="yellow", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Average Age vs Adult Obesity", x="Avg Age", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+Countries cluster away from the very low ages, and **the trend line slopes slightly downward**.
+
+This shows a **weak decrease in obesity with higher average age**.
+
+**Conclusion:** Age alone does not strongly explain obesity differences across countries
+
+<br><br><br>
+
+# 19. Gender Differences in Obesity
+```{r}
+
+ggplot(data) +
+geom_boxplot(aes(x="Males", y=Avg_Males_Obesity_BMI_30kg_m2), fill="blue", alpha=0.7) +
+geom_boxplot(aes(x="Females", y=Avg_Females_Obesity_BMI_30kg_m2), fill="red", alpha=0.7) +
+theme_minimal() +
+labs(title="Obesity by Gender", x="Gender", y="BMI ≥30 (%)")
+```
+
+### Interpretation:
+
+Males have generally **lower obesity**, and their range **(whiskers) is shorter**, showing **fewer extreme values**.
+
+Females tend to have **higher and more variable obesity rates**, suggesting gender differences that could be important for targeted interventions.
+
+**Conclusion:** Females show **higher** and more variable obesity, possibly due to **differences in hormones, metabolism, or lifestyle factors**.
+<br><br><br>
+
+
+# 20. Animal-based Food vs Obesity
+```{r}
+
+ggplot(data, aes(x=Animal_based_Food_Average, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="darkorange", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Animal-based Food vs Adult Obesity", x="Animal-based Food Average", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+**Most countries cluster** on the **low consumption side**, slightly **below the trend line**, while **fewer countries above the line** are more spread out.
+
+The **trend line slopes slightly downward**, indicating a **very weak inverse relationship** between animal-based food consumption and obesity.
+
+**Conclusion:** Animal-based food alone is **not a strong driver of adult obesity**, and other factors likely play a bigger role.
+<br><br><br>
+
+# 21. Min & Max Per Capita Food Consumption
+```{r}
+
+ggplot(data, aes(x=PerCapita_Consumption_Min, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="darkgreen", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Min Per Capita Food Consumption vs Adult Obesity", x="Min Per Capita", y="Adult Obesity (BMI ≥30)")
+
+ggplot(data, aes(x=PerCapita_Consumption_Max, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="darkgreen", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Max Per Capita Food Consumption vs Adult Obesity", x="Max Per Capita", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+Most countries are clustered at **lower consumption and lower obesity**, while fewer countries with higher consumption show slightly higher obesity.
+
+**The upward trend is weak**, showing that **food consumption alone** does not fully explain obesity differences.
+
+**Conclusion:** Higher per capita consumption may contribute to obesity, but other factors are likely more important.
+<br><br><br>
+
+# 22. Years Span vs Obesity
+```{r}
+
+ggplot(data, aes(x=Sum_Years_Span, y=Avg_Adult_Obesity_BMI30)) +
+geom_point(color="purple", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Sum of Years Span vs Adult Obesity", x="Sum Years", y="Adult Obesity (BMI ≥30)")
+```
+
+### Interpretation:
+
+The regression line shows a **very slight positive slope**, which indicates a **weak positive association** between the number of years included in the analysis and the estimated adult obesity rate. This suggests that **extending the time span does not materially change the overall obesity level**.
+
+The wide dispersion of points around the fitted line reflects **substantial variability across countries and years**, meaning that differences in obesity are driven more by structural or regional factors than by the length of the time window itself.
+
+The confidence band around the regression line is relatively wide compared to the slope, **reinforcing that the observed relationship is statistically weak** and should not be interpreted as a meaningful temporal effect.
+
+**Conclusion:** 
+
+Overall, adult obesity estimates are stable across different time spans, which indicates that the results are robust to the choice of temporal aggregation and that the analysis is not biased by the selected period length.
+<br><br><br>
+
+# 23. Boys vs Girls Obesity
+```{r}
+
+ggplot(data, aes(x=Avg_Boys_Percent, y=Avg_Girls_Percent)) +
+geom_point(color="darkcyan", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Boys vs Girls Obesity Percent", x="Boys (%)", y="Girls (%)")
+```
+
+### Interpretation:
+
+The near-linear pattern indicates that obesity risk **scales similarly across genders**.
+
+The regression slope shows **girls’ obesity increases** at a **slightly lower rate** than boys as overall obesity rises.
+
+**Gender differences are minimal at low obesity levels** but widen modestly in high-obesity regions.
+The narrow confidence interval across most of the range suggests **strong model stability and low estimation risk**.
+
+Increased dispersion at higher obesity levels points to **localized environmental or policy factors amplifying outcomes**.
+
+**Implication:**
+
+Obesity should be addressed as a **system-level issue**, with intervention intensity adjusted by prevalence rather than gender alone.
+
+Gender-specific strategies may refine impact, but population-wide policies will drive the largest gains.
+
+This insight is based on **trend behavior, slope interpretation, and variance analysis** using R-based statistical modeling.
+<br><br><br>
+
+# 24. Age vs Child Obesity
+```{r}
+
+ggplot(data, aes(x=Avg_Age, y=Avg_Child_Obesity_MBI2SD)) +
+geom_point(color="violet", alpha=0.6) +
+geom_smooth(method="lm", color="black") +
+theme_minimal() +
+labs(title="Average Age vs Child Obesity", x="Avg Age", y="Child Obesity (BMI ≥2SD)")
+```
+
+### Interpretation:
+
+The trend indicates a **weak negative relationship** between average age and child obesity.
+
+Obesity rates show **high variability**, especially at lower average ages.
+
+The widening confidence interval at higher ages suggests **limited data support** in that range.
+
+Overall, average age is **not a strong driver** of child obesity outcomes.
+
+**Implication:**
+
+Child obesity is influenced more by **behavioral and environmental factors** than population age structure.
+
+Policy focus should prioritize **modifiable risk factors** over demographic characteristics.
+<br><br><br>
+
+# 25. Income Level vs Child Obesity
+```{r}
+
+ggplot(data, aes(x=Income_Level, y=Avg_Child_Obesity_MBI2SD, fill=Income_Level)) +
+geom_boxplot(alpha=0.8) +
+theme_minimal() +
+labs(title="Child Obesity by Income Level", x="Income Level", y="Child Obesity (BMI ≥2SD)") +
+theme(legend.position="none")
+```
+
+### Interpretation:
+
+Median child obesity rates are **higher in high-income and unknown-income groups** than in low-income groups.
+
+Low-income countries show a **narrower spread**, indicating more uniform outcomes.
+
+High-income and middle-income groups exhibit **greater variability**, suggesting uneven exposure to risk factors.
+
+The presence of high outliers across income levels indicates that **income alone does not fully explain obesity risk**.
+
+**Implication:**
+
+Child obesity is **not strictly inversely related to income level**.
+
+Structural and behavioral factors likely outweigh income classification alone.
+
+Policy responses should be **context-specific**, not income-tier driven.
+<br><br><br>
+
+<!-- 
+
+# 26. Export Final CSV
+```{r}
+
+write.csv(data, "D:/Data Analysis/Obesity_Causes_Analysis/Outputs_Advanced/final_data.csv", row.names=FALSE)
+```
+### Interpretation:
+This step confirms the final cleaned dataset has been exported successfully, containing all countries, variables, and cleaned missing values.
+-->
+
+
+# 26. Conclusion & Recommendations
+
+**Obesity is a multifaceted issue** shaped by systemic factors, not just individual food choices or income levels.
+Key health risks like diabetes rise sharply in high-obesity populations, highlighting the urgency for targeted action.
+
+**Recommendations:**
+
+- Avoid one-size-fits-all solutions focusing on single foods or nutrients.
+- Improve food environments: availability, affordability, marketing, and urban planning.
+- Focus on high-prevalence areas with stronger, tailored interventions.
+- Address early-life and household factors, especially for child obesity.
+- Use data-driven approaches to identify priority regions and groups.
+
+**Key message:**
+
+Obesity is driven by how societies influence lifestyle choices over time. Effective strategies must tackle these broader systems not just diets to create lasting change.
+
+---
+
+*Data source:* [Our World in Data](https://ourworldindata.org/)

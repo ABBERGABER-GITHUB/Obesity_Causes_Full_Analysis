@@ -1,0 +1,5 @@
+### ANOVA: Adult Obesity ~ Income_Level/n/n              Df Sum Sq Mean Sq F value Pr(>F)  
+Income_Level   4  0.187 0.04674   2.842 0.0255 *
+Residuals    187  3.075 0.01645                 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
