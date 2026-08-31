@@ -50,7 +50,7 @@ The analysis focuses on both **adult and child obesity**, examining dietary inta
 **Research Objective:**
 This study aims to evaluate whether commonly cited dietary and lifestyle factors—such as sugar consumption, fast food sales, and physical activity can meaningfully explain cross country differences in obesity prevalence.
 
-** Conclusion:**
+**Conclusion:**
 
 Results indicate that **no single factor** can account for global obesity variation. Instead, obesity reflects **complex, long-term structural, social, and environmental influences** beyond simple consumption measures.
 <br><br><br>
